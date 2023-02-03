@@ -62,10 +62,10 @@ int main()
                 write(p1[1], &user, sizeof(user)); //send N to 2nd child
                 write(p2[1], &user, sizeof(user)); //send N to 3rd child
 
-                read(p3[1], &t2, sizeof(t2)); //get run time from 2nd child
-                read(p4[1], &t3, sizeof(t3)); //get run time from 3rd child
-                cout << "Run time of RECC Fib " << t2 << endl;
-                cout << "Run time of ITT Fib " << t3 << endl;
+                read(p3[0], &t2, sizeof(t2)); //get run time from 2nd child
+                read(p4[0], &t3, sizeof(t3)); //get run time from 3rd child
+                cout << "Run time of RECC Fib is: " << t2 << " seconds." << endl;
+                cout << "Run time of ITT Fib is:  " << t3 << " seconds." << endl;
                 break;
             }
 
