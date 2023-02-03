@@ -4,6 +4,7 @@
 #include <cstdlib> //for exit(0)
 #include <cstring>
 #include <iostream>
+#include <time.h>
 using namespace std;
 #define MAX 100
 
@@ -16,7 +17,7 @@ int fibo_iter(int N) //iterative fib
         return 1;
     else
     {
-        for (int i = 3; i < N; i++)
+        for (int i = 3; i <= N; i++)
         {
             temp = f1 + f2;
             f1 = f2;
@@ -36,59 +37,81 @@ int fibo_rec(int N) //recursive fib
 
 int main()
 {
-    int pid, status, i;
-    int p1[2], p2[2]; // pipe descriptors
-    int response, response2;
+    clock_t start_t, end_t;
+    int pid, status, i, user;
+    int p1[2], p2[2], p3[2], p4[2]; // pipe descriptors
     char s[MAX];
     pipe(p1);
     pipe(p2);
-    for (i = 1; i < 3; i++)
+    pipe(p3);
+    pipe(p4);
+
+    cout << "Please input a number: " << endl;
+    cin >> user;
+    for (i = 1; i < 4; i++) //loops 3 times
     {
         pid = fork();
-        if (pid == 0 && i == 1) // child process1
-        {                       // close(p1[0]);
-            // close(p2[1]);
-            cout << " Menu: \n";
-            cout << " ------------- \n";
-            cout << " 1. display Hello " << endl;
-            cout << " 2. display Bye " << endl;
-            cout << " ------------- \n";
-            cout << " choice ( 1-2 )?\n";
-            cin >> response;
-            write(p1[1], &response, sizeof(int));
-            read(p2[0], s, MAX);
-            cout << s << endl;
-            // close(p1[1]);
-            // close(p2[0]);
-            exit(0);
-        }                            // if
-        else if (pid == 0 && i == 2) // child process2
-        {                            // close(p1[1]);
-            // close(p2[0]);
-            read(p1[0], &response2, sizeof(int));
-            switch (response2)
+        if(pid == 0)
+        {
+            if(i == 1) //if 1st child
             {
-            case 1:
-                strcpy(s, "Hello\n");
-                break;
-            case 2:
-                strcpy(s, "Bye\n");
-                break;
-            default:
-                strcpy(s, "Try option 1 or 2.\n");
+                double t2, t3;
+                close(p1[0]);
+                close(p2[0]);
+
+                write(p1[1], &user, sizeof(user)); //send N to 2nd child
+                write(p2[1], &user, sizeof(user)); //send N to 3rd child
+
+                read(p3[1], &t2, sizeof(t2)); //get run time from 2nd child
+                read(p4[1], &t3, sizeof(t3)); //get run time from 3rd child
+                cout << "Run time of RECC Fib " << t2 << endl;
+                cout << "Run time of ITT Fib " << t3 << endl;
                 break;
             }
-            write(p2[1], s, MAX);
-            // close(p1[0]);
-            // close(p2[1]);
-            exit(0);
-        } // elseif
+
+            if(i == 2) //if 2nd child
+            {
+                int recursive;
+                double total_time;
+                close(p1[1]);
+                close(p3[0]);
+
+                read(p1[0], &recursive, sizeof(recursive)); //get number from 1st child
+
+                start_t = clock();
+                recursive = fibo_rec(recursive); //calculate recursive fib
+                end_t = clock();
+                total_time = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+
+                cout << user << " RECC Fibonocci number is: " << recursive << " inside 2nd child" << endl;
+                write(p3[1], &total_time, sizeof(total_time)); //send time to 1st child
+                break;
+            }
+
+            if(i == 3) //if 3rd child
+            {
+                int iterative;
+                double total_time;
+                close(p2[1]);
+                close(p4[0]);
+
+                read(p2[0], &iterative, sizeof(iterative)); //get number from 1st child
+
+                start_t = clock();
+                iterative = fibo_iter(iterative);
+                end_t = clock();
+                total_time = (double)(end_t - start_t) / CLOCKS_PER_SEC;
+
+                cout << user << " ITT Fibonocci number is " << iterative << " inside 3rd child" << endl;
+                write(p4[1], &total_time, sizeof(total_time)); //send time to 1st child
+                break;
+            }
+        }
     }     // for_i
-    // Now wait for the child processes to finish
-    for (i = 1; i <= 2; i++)
+
+    for(int i = 1; i < 4; i++)
     {
-        pid = wait(&status);
-        cout << "Child (pid=" << pid << ") exited, status=" << status << endl;
+        wait(NULL);
     }
     return 0;
 } // main
